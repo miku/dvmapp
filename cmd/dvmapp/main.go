@@ -42,9 +42,6 @@ func (p *Puzzle) ResolveImages(identifier string) (*ImageTriplet, error) {
 	if len(identifier) != 6 {
 		return nil, fmt.Errorf("six digit identifier expected")
 	}
-	if err := p.CombineImages(identifier); err != nil {
-		log.Fatal(err)
-	}
 	// TODO: Test if identifier is valid.
 	return &ImageTriplet{
 		Artifact:  fmt.Sprintf("/static/images/a/%s.jpg", identifier[:2]),
@@ -55,21 +52,36 @@ func (p *Puzzle) ResolveImages(identifier string) (*ImageTriplet, error) {
 
 // CombineImages takes three images and concatenates them into a single one.
 func (p *Puzzle) CombineImages(identifier string) error {
+	resizeHeight := 300
 	it, err := p.ResolveImages(identifier)
 	if err != nil {
 		return err
 	}
-	log.Println(it.Artifact)
-	img, err := imgio.Open(it.Artifact)
-	if err != nil {
+	if img, err := imgio.Open(path.Join(".", it.Artifact)); err != nil {
 		return err
 	}
-	w, h := img.Bounds().Max.X, img.Bounds().Max.Y
+	w, h, rh := img.Bounds().Max.X, img.Bounds().Max.Y, resizeHeight
 	ratio := float64(w) / float64(h)
-	rh := 300
 	rw := int(ratio * float64(rh))
-	log.Println(w, h, rh, rw)
-	resized := transform.Resize(img, rw, rh, transform.Linear)
+	a := transform.Resize(img, rw, rh, transform.Linear)
+
+	if img, err = imgio.Open(path.Join(".", it.People)); err != nil {
+		return err
+	}
+
+	w, h, rh := img.Bounds().Max.X, img.Bounds().Max.Y, resizeHeight
+	ratio = float64(w) / float64(h)
+	rw = int(ratio * float64(rh))
+	b := transform.Resize(img, rw, rh, transform.Linear)
+
+	if img, err = imgio.Open(path.Join(".", it.Landscape)); err != nil {
+		return err
+	}
+	w, h, rh := img.Bounds().Max.X, img.Bounds().Max.Y, resizeHeight
+	ratio := float64(w) / float64(h)
+	rw := int(ratio * float64(rh))
+	c := transform.Resize(img, rw, rh, transform.Linear)
+
 	return imgio.Save("xxx.png", resized, imgio.JPEGEncoder(100))
 }
 
@@ -204,6 +216,11 @@ func WriteHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	if err := puzzle.CombineImages(rid); err != nil {
+		log.Fatal(err)
+	}
+
 	var data = struct {
 		RandomIdentifier string
 		ImageTriplet     *ImageTriplet
