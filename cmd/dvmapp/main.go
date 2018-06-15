@@ -119,7 +119,14 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := t.Execute(w, puzzle); err != nil {
+	var data = struct {
+		RandomIdentifier      string
+		RandomVideoIdentifier string
+	}{
+		RandomIdentifier:      puzzle.RandomIdentifier(),
+		RandomVideoIdentifier: puzzle.RandomVideoIdentifier(),
+	}
+	if err := t.Execute(w, data); err != nil {
 		log.Fatal(err)
 	}
 }
