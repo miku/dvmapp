@@ -54,3 +54,12 @@ A special presentation mode where images and text are displayed.
 ----
 
 * Edith: p/02, a/02, a/25.
+
+----
+
+Todo:
+
+* /s/4 - story detail
+* story formatting
+* archive
+* security, throttling

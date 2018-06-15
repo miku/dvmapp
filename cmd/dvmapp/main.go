@@ -483,6 +483,10 @@ func WriteHandler(w http.ResponseWriter, r *http.Request) {
 
 		story := strings.TrimSpace(r.Form.Get("story"))
 
+		if len(story) > 20000 {
+			story = story[:20000]
+		}
+
 		if story == "" {
 			log.Println("no content")
 			w.WriteHeader(http.StatusNoContent)
