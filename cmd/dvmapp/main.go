@@ -20,6 +20,7 @@ import (
 
 	"github.com/disintegration/imaging"
 	humanize "github.com/dustin/go-humanize"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 
 	"image/color"
@@ -37,8 +38,9 @@ var (
 )
 
 var (
-	listen = flag.String("listen", "0.0.0.0:8080", "hostport to listen on")
-	dbpath = flag.String("db", "data.db", "path to database")
+	listen  = flag.String("listen", "0.0.0.0:8080", "hostport to listen on")
+	dbpath  = flag.String("db", "data.db", "path to database")
+	logfile = flag.String("log", "", "path to logfile")
 )
 
 // Puzzle game allows to retrieve a random combination of images.
@@ -534,6 +536,17 @@ func main() {
 		log.Fatal(err)
 	}
 
+	var loggingWriter = os.Stdout
+
+	if *logfile != "" {
+		file, err := os.OpenFile(*logfile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+		if err != nil {
+			log.Fatal(err)
+		}
+		loggingWriter = file
+		defer file.Close()
+	}
+
 	puzzle, err = NewPuzzle()
 	if err != nil {
 		log.Printf("puzzle err: %s", err)
@@ -549,5 +562,8 @@ func main() {
 	r.HandleFunc("/about", AboutHandler)
 	r.HandleFunc("/", HomeHandler)
 	http.Handle("/", r)
-	log.Fatal(http.ListenAndServe(*listen, nil))
+
+	loggedRouter := handlers.LoggingHandler(loggingWriter, r)
+
+	log.Fatal(http.ListenAndServe(*listen, loggedRouter))
 }
