@@ -66,6 +66,31 @@ type Story struct {
 	Created         time.Time
 }
 
+// RandomImageWithStory returns the identifier if an image, that has a story
+// associated with it.
+func (p *Puzzle) RandomImageWithStory() (string, error) {
+	rows, err := db.Query("SELECT imageid FROM text")
+	if err != nil {
+		return "", fmt.Errorf("sql failed: %s", err)
+	}
+
+	var imageIdentifiers []string
+	var iid string
+
+	for rows.Next() {
+		err = rows.Scan(&iid)
+		if err != nil {
+			return "", fmt.Errorf("sql failed: %s", err)
+		}
+		imageIdentifiers = append(imageIdentifiers, iid)
+	}
+
+	if len(imageIdentifiers) == 0 {
+		return p.RandomIdentifier(), nil
+	}
+	return imageIdentifiers[rand.Intn(len(imageIdentifiers)-1)], nil
+}
+
 // ResolveImages returns a list of image paths given an identifier.
 func (p *Puzzle) ResolveImages(identifier string) (*ImageTriplet, error) {
 	if len(identifier) != 6 {
@@ -325,14 +350,23 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
+	riws, err := puzzle.RandomImageWithStory()
+	if err != nil {
+		log.Printf("sql failed: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	var data = struct {
 		RandomIdentifier      string
+		RandomImageWithStory  string
 		RandomVideoIdentifier string
 		Stories               []Story
 	}{
 		RandomIdentifier:      puzzle.RandomIdentifier(),
 		RandomVideoIdentifier: puzzle.RandomVideoIdentifier(),
 		Stories:               stories,
+		RandomImageWithStory:  riws,
 	}
 	// Cache an image, as poster for certain devices.
 	if err := puzzle.CombineImages(data.RandomVideoIdentifier); err != nil {

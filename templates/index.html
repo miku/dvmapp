@@ -58,7 +58,7 @@
         <p>Beginne eine <a href="/w/{{ .RandomVideoIdentifier }}">Geschichte mit diesen drei Bildern</a> 
           | <a href="/">NEU!</a> &mdash;
             <a href="/w/{{ .RandomIdentifier }}">oder etwas anderem</a> ...</p>
-        <p><a href="/r/{{ .RandomIdentifier }}">Lies eine zufällige Geschichte</a> oder <a href="/translate">versuche dich an einer Übersetzung</a>.</p>
+        <p><a href="/r/{{ .RandomImageWithStory }}">Lies eine zufällige Geschichte</a> oder <a href="/translate">versuche dich an einer Übersetzung</a>.</p>
         <hr>
         {{range .Stories}}
           <a href="/r/{{ .ImageIdentifier }}">{{ .ImageIdentifier }}</a> {{ .Text | clip }} &mdash; <a href="/s/{{ .Identifier }}">{{ .Created | ago }}</a><br>
