@@ -13,7 +13,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/anthonynsimon/bild/imgio"
+	"github.com/anthonynsimon/bild/transform"
 	"github.com/gorilla/mux"
+
+	_ "image/jpeg"
 )
 
 var puzzle *Puzzle
@@ -24,6 +28,49 @@ type Puzzle struct {
 	People     []string
 	Landscapes []string
 	Videos     []string
+}
+
+// ImageTriplet groups three images for a puzzle.
+type ImageTriplet struct {
+	Artifact  string
+	People    string
+	Landscape string
+}
+
+// ResolveImages returns a list of image paths given an identifier.
+func (p *Puzzle) ResolveImages(identifier string) (*ImageTriplet, error) {
+	if len(identifier) != 6 {
+		return nil, fmt.Errorf("six digit identifier expected")
+	}
+	if err := p.CombineImages(identifier); err != nil {
+		log.Fatal(err)
+	}
+	// TODO: Test if identifier is valid.
+	return &ImageTriplet{
+		Artifact:  fmt.Sprintf("/static/images/a/%s.jpg", identifier[:2]),
+		People:    fmt.Sprintf("/static/images/p/%s.jpg", identifier[2:4]),
+		Landscape: fmt.Sprintf("/static/images/l/%s.jpg", identifier[4:6]),
+	}, nil
+}
+
+// CombineImages takes three images and concatenates them into a single one.
+func (p *Puzzle) CombineImages(identifier string) error {
+	it, err := p.ResolveImages(identifier)
+	if err != nil {
+		return err
+	}
+	log.Println(it.Artifact)
+	img, err := imgio.Open(it.Artifact)
+	if err != nil {
+		return err
+	}
+	w, h := img.Bounds().Max.X, img.Bounds().Max.Y
+	ratio := float64(w) / float64(h)
+	rh := 300
+	rw := int(ratio * float64(rh))
+	log.Println(w, h, rh, rw)
+	resized := transform.Resize(img, rw, rh, transform.Linear)
+	return imgio.Save("xxx.png", resized, imgio.JPEGEncoder(100))
 }
 
 // Size returns the total number of images.
@@ -140,9 +187,33 @@ func ReadHandler(w http.ResponseWriter, r *http.Request) {
 
 // WriteHandler renders a page to write a story.
 func WriteHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("write: %s", r.Method)
+
 	vars := mux.Vars(r)
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "%v\n", vars["rid"])
+	rid := vars["rid"]
+	log.Printf("write form for: %v", rid)
+
+	t, err := template.ParseFiles("templates/write.html")
+	if t == nil {
+		log.Fatalf("template failed: %s", err)
+	}
+	if err != nil {
+		log.Fatal(err)
+	}
+	it, err := puzzle.ResolveImages(rid)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var data = struct {
+		RandomIdentifier string
+		ImageTriplet     *ImageTriplet
+	}{
+		RandomIdentifier: rid,
+		ImageTriplet:     it,
+	}
+	if err := t.Execute(w, data); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func main() {
