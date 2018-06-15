@@ -2,12 +2,17 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
+	"strings"
+	"time"
 
 	_ "github.com/miku/dvmapp/cmd/dvmapp/statik"
 	"github.com/rakyll/statik/fs"
@@ -28,6 +33,24 @@ func (p *Puzzle) Size() int {
 // Combinations returns the number of possible combinations.
 func (p *Puzzle) Combinations() int {
 	return len(p.Artifacts) * len(p.People) * len(p.Landscapes)
+}
+
+// RandomIdentifier returns a random string pointing to a combination of three images.
+func (p *Puzzle) RandomIdentifier() string {
+	var as, ps, ls []string
+	for _, fn := range p.Artifacts {
+		base := path.Base(fn)
+		as = append(as, strings.Replace(base, ".jpg", "", -1))
+	}
+	for _, fn := range p.People {
+		base := path.Base(fn)
+		ps = append(ps, strings.Replace(base, ".jpg", "", -1))
+	}
+	for _, fn := range p.Artifacts {
+		base := path.Base(fn)
+		ls = append(ls, strings.Replace(base, ".jpg", "", -1))
+	}
+	return fmt.Sprintf("%s%s%s", as[rand.Intn(len(as))], ps[rand.Intn(len(ps))], ls[rand.Intn(len(ls))])
 }
 
 // CreateRandomImage creates a random image from three elements and stores it
@@ -69,6 +92,8 @@ func NewPuzzle() (*Puzzle, error) {
 }
 
 func main() {
+	rand.Seed(time.Now().Unix())
+
 	statikFS, err := fs.New()
 	if err != nil {
 		log.Fatal(err)
@@ -78,7 +103,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println(puzzle)
+	// log.Println(puzzle)
 	log.Println(puzzle.Size())
 	log.Println(puzzle.Combinations())
 
@@ -90,6 +115,7 @@ func main() {
 	// /r       read all
 	// /r/{id}  read a specific image story
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		log.Println(puzzle.RandomIdentifier())
 		t, err := template.ParseFiles("templates/index.html")
 		if t == nil {
 			log.Fatal("template failed")
