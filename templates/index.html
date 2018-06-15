@@ -40,11 +40,11 @@
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
   <div class="container">
     <div class="row">
-      <div class="one-half column" style="margin-top: 10%">
-        <h3>Die virtuelle Mittagsfrau</h3>
+      <div class="12 columns" style="margin-top: 10%">
+        <h3>Die virtuelle Mittagsfrau &mdash; Flachsmaschine</h3>
 
         <video autoPlay
-            poster="/static/sample.jpg">
+            poster="/static/cache/{{ .RandomVideoIdentifier }}.jpg">
             <source src="/static/videos/dvm-{{ .RandomVideoIdentifier }}.webm" type='video/webm; codecs="vp8.0, vorbis"'>
             <source src="/static/videos/dvm-{{ .RandomVideoIdentifier }}.mp4" type='video/mp4; codecs="avc1.4D401E, mp4a.40.2"'>
             <p>This is fallback content to display for user agents that do not support the video tag.</p>

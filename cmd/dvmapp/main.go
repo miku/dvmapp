@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"html/template"
+	"image"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -13,10 +14,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anthonynsimon/bild/imgio"
-	"github.com/anthonynsimon/bild/transform"
+	"github.com/disintegration/imaging"
 	"github.com/gorilla/mux"
 
+	"image/color"
 	_ "image/jpeg"
 )
 
@@ -53,36 +54,54 @@ func (p *Puzzle) ResolveImages(identifier string) (*ImageTriplet, error) {
 // CombineImages takes three images and concatenates them into a single one.
 func (p *Puzzle) CombineImages(identifier string) error {
 	resizeHeight := 300
+
+	filename := fmt.Sprintf("./static/cache/%s.jpg", identifier)
+	if _, err := os.Stat(filename); err == nil {
+		return nil
+	}
+
 	it, err := p.ResolveImages(identifier)
 	if err != nil {
 		return err
 	}
-	if img, err := imgio.Open(path.Join(".", it.Artifact)); err != nil {
+
+	// Resize artifact.
+	artifact, err := imaging.Open(path.Join(".", it.Artifact))
+	if err != nil {
 		return err
 	}
-	w, h, rh := img.Bounds().Max.X, img.Bounds().Max.Y, resizeHeight
-	ratio := float64(w) / float64(h)
-	rw := int(ratio * float64(rh))
-	a := transform.Resize(img, rw, rh, transform.Linear)
+	artifact = imaging.Resize(artifact, 0, resizeHeight, imaging.Lanczos)
 
-	if img, err = imgio.Open(path.Join(".", it.People)); err != nil {
+	// Resize people.
+	people, err := imaging.Open(path.Join(".", it.People))
+	if err != nil {
 		return err
 	}
+	people = imaging.Resize(people, 0, resizeHeight, imaging.Lanczos)
 
-	w, h, rh := img.Bounds().Max.X, img.Bounds().Max.Y, resizeHeight
-	ratio = float64(w) / float64(h)
-	rw = int(ratio * float64(rh))
-	b := transform.Resize(img, rw, rh, transform.Linear)
-
-	if img, err = imgio.Open(path.Join(".", it.Landscape)); err != nil {
+	// Resize landscape.
+	landscape, err := imaging.Open(path.Join(".", it.Landscape))
+	if err != nil {
 		return err
 	}
-	w, h, rh := img.Bounds().Max.X, img.Bounds().Max.Y, resizeHeight
-	ratio := float64(w) / float64(h)
-	rw := int(ratio * float64(rh))
-	c := transform.Resize(img, rw, rh, transform.Linear)
+	landscape = imaging.Resize(landscape, 0, resizeHeight, imaging.Lanczos)
 
-	return imgio.Save("xxx.png", resized, imgio.JPEGEncoder(100))
+	// Join.
+	dst := imaging.New(960, 300, color.NRGBA{0, 0, 0, 0})
+	dst = imaging.Paste(dst, artifact, image.Pt(0, 0))
+	dst = imaging.Paste(dst, people, image.Pt(320, 0))
+	dst = imaging.Paste(dst, landscape, image.Pt(640, 0))
+
+	// Save.
+	if err := os.MkdirAll("./static/cache", 0777); err != nil {
+		log.Fatal(err)
+	}
+	err = imaging.Save(dst, filename)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("cached combined image at %s", filename)
+	return err
 }
 
 // Size returns the total number of images.
@@ -185,6 +204,10 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		RandomIdentifier:      puzzle.RandomIdentifier(),
 		RandomVideoIdentifier: puzzle.RandomVideoIdentifier(),
 	}
+	// Cache an image, as poster for certain devices.
+	if err := puzzle.CombineImages(data.RandomVideoIdentifier); err != nil {
+		log.Fatal(err)
+	}
 	if err := t.Execute(w, data); err != nil {
 		log.Fatal(err)
 	}
@@ -200,6 +223,12 @@ func ReadHandler(w http.ResponseWriter, r *http.Request) {
 // WriteHandler renders a page to write a story.
 func WriteHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("write: %s", r.Method)
+
+	if r.Method == "POST" {
+		r.ParseForm() //Parse url parameters passed, then parse the response packet for the POST body (request body)
+		// attention: If you do not call ParseForm method, the following data can not be obtained form
+		fmt.Println(r.Form) // print information on server side.
+	}
 
 	vars := mux.Vars(r)
 	rid := vars["rid"]

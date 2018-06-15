@@ -15,3 +15,4 @@
 /static/dvm-*
 /static/videos/dvm-*
 /.vscode
+/static/cache/*jpg
