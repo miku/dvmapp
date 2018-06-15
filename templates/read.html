@@ -49,6 +49,13 @@
     </div>
     <div class="row">
         <div class="12 columns" style="margin-top: 0%">
+
+            <hr>
+            {{range .Stories}}
+                 {{ .Text }} &mdash; {{ .Created | ago }}
+                 <hr>
+            {{end}}
+
             <p>Eine weitere <a href="/w/{{ .RandomIdentifier }}">Geschichte hinzufügen</a> ... </p>
         </div>
     </div>

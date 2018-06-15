@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/disintegration/imaging"
+	humanize "github.com/dustin/go-humanize"
 	"github.com/gorilla/mux"
 
 	"image/color"
@@ -57,8 +58,9 @@ type ImageTriplet struct {
 
 // Story is a minimal text.
 type Story struct {
-	Text    string
-	Created time.Time
+	ImageIdentifier string
+	Text            string
+	Created         time.Time
 }
 
 // ResolveImages returns a list of image paths given an identifier.
@@ -211,9 +213,21 @@ func NewPuzzle() (*Puzzle, error) {
 	return puzzle, nil
 }
 
-// HomeHandler render homepage.
-func HomeHandler(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFiles("templates/index.html")
+// AboutHandler render info.
+func AboutHandler(w http.ResponseWriter, r *http.Request) {
+
+	funcMap := template.FuncMap{
+		"upper": strings.ToUpper,
+		"ago":   humanize.Time,
+		"clip": func(s string) string {
+			if len(s) > 30 {
+				return fmt.Sprintf("%s ...", s[:30])
+			}
+			return s
+		},
+	}
+
+	t, err := template.New("about.html").Funcs(funcMap).ParseFiles("templates/about.html")
 	if t == nil {
 		log.Printf("template is nil: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -224,6 +238,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
 	var data = struct {
 		RandomIdentifier      string
 		RandomVideoIdentifier string
@@ -244,13 +259,99 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// HomeHandler render homepage.
+func HomeHandler(w http.ResponseWriter, r *http.Request) {
+
+	funcMap := template.FuncMap{
+		"upper": strings.ToUpper,
+		"ago":   humanize.Time,
+		"clip": func(s string) string {
+			if len(s) > 30 {
+				return fmt.Sprintf("%s ...", s[:30])
+			}
+			return s
+		},
+	}
+
+	t, err := template.New("index.html").Funcs(funcMap).ParseFiles("templates/index.html")
+	if t == nil {
+		log.Printf("template is nil: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if err != nil {
+		log.Printf("template err: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	rows, err := db.Query("SELECT imageid, text, created FROM text ORDER BY created DESC LIMIT 3")
+	if err != nil {
+		log.Printf("sql failed: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	var stories []Story
+
+	var imageIdentifier string
+	var text string
+	var created time.Time
+
+	for rows.Next() {
+		err = rows.Scan(&imageIdentifier, &text, &created)
+		if err != nil {
+			log.Printf("sql failed: %s", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		stories = append(stories, Story{
+			ImageIdentifier: imageIdentifier,
+			Text:            text,
+			Created:         created,
+		})
+	}
+
+	var data = struct {
+		RandomIdentifier      string
+		RandomVideoIdentifier string
+		Stories               []Story
+	}{
+		RandomIdentifier:      puzzle.RandomIdentifier(),
+		RandomVideoIdentifier: puzzle.RandomVideoIdentifier(),
+		Stories:               stories,
+	}
+	// Cache an image, as poster for certain devices.
+	if err := puzzle.CombineImages(data.RandomVideoIdentifier); err != nil {
+		log.Printf("cannot combine images for %s: %s", data.RandomVideoIdentifier, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if err := t.Execute(w, data); err != nil {
+		log.Printf("template err: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+}
+
 // ReadHandler renders a page with stories to read.
 func ReadHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	rid := vars["rid"]
 
-	t, err := template.ParseFiles("templates/read.html")
+	funcMap := template.FuncMap{
+		"upper": strings.ToUpper,
+		"ago":   humanize.Time,
+		"clip": func(s string) string {
+			if len(s) > 30 {
+				return fmt.Sprintf("%s ...", s[:30])
+			}
+			return s
+		},
+	}
+
+	t, err := template.New("read.html").Funcs(funcMap).ParseFiles("templates/read.html")
 	if t == nil {
 		log.Printf("template failed: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -261,6 +362,7 @@ func ReadHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
 	it, err := puzzle.ResolveImages(rid)
 	if err != nil {
 		log.Printf("cannot resolve images for identifier %s: %s", rid, err)
@@ -276,7 +378,7 @@ func ReadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := db.Query("SELECT text, created FROM text where imageid = ?", rid)
+	rows, err := db.Query("SELECT text, created FROM text where imageid = ? ORDER BY created DESC", rid)
 	if err != nil {
 		log.Printf("sql failed: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -444,6 +546,7 @@ func main() {
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static/"))))
 	r.HandleFunc("/r/{rid}", ReadHandler)
 	r.HandleFunc("/w/{rid}", WriteHandler)
+	r.HandleFunc("/about", AboutHandler)
 	r.HandleFunc("/", HomeHandler)
 	http.Handle("/", r)
 	log.Fatal(http.ListenAndServe(*listen, nil))

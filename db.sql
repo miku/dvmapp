@@ -5,5 +5,5 @@ CREATE TABLE `text` (
     `language` TEXT NOT NULL,
     `ip` TEXT NOT NULL,
     `flagged` INTEGER NOT NULL,
-    `created` DATE DEFAULT (datetime('now', 'localtime'))
+    `created` DATE DEFAULT (datetime('now'))
 );

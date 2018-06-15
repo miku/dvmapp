@@ -1,4 +1,8 @@
 body {
+    background-color: white;
+}
+.container {
+    padding: 0px 15px 15px 15px;
     background-color: rgb(240, 240, 240);
 }
 
@@ -12,4 +16,22 @@ video[poster] {
 
 select {
     font-size: 0.8em;
+}
+
+a:link {
+    text-decoration: none;
+}
+
+a {
+    text-decoration: none;
+    }
+    a:link {
+    color:rgb(103, 96, 83);
+    border-bottom: 1px solid #c0c0c0;
+    }
+    a:visited {
+    color: #0000ff;
+    border-bottom: 1px solid #c0c0c0;
+    }
+
 }
