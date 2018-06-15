@@ -52,7 +52,7 @@
 
             <hr>
             {{range .Stories}}
-                 {{ .Text }} &mdash; {{ .Created | ago }}
+                 <p>{{ .Text }} {{ .Created | ago }}</p>
                  <hr>
             {{end}}
 
