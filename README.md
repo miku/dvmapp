@@ -6,6 +6,12 @@ Server for Project Die Virtuelle Mittagsfrau.
 
 ### Homepage
 
+On startup, make an inventory of media files (media/dvm-..) for images and
+videos. At template execution time, choose a random element.
+
+Random media and link to random read and write page (/r/080912 or /w/121708 ...).
+
+
 * an random animation
 * link to the details [write] page for the current animation
 * some stats and random sentences from stories
@@ -15,8 +21,8 @@ Server for Project Die Virtuelle Mittagsfrau.
 The animations are numbered:
 
 ```
-mittagsfrau.de/i/3921.gifv
-mittagsfrau.de/i/3921.jpg
+mittagsfrau.de/i/011421.gifv
+mittagsfrau.de/i/211413.jpg
 ```
 
 ```
