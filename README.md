@@ -63,3 +63,5 @@ Todo:
 * story formatting
 * archive
 * security, throttling
+* like, flag
+* flachsctl

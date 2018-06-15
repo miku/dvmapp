@@ -487,6 +487,8 @@ func WriteHandler(w http.ResponseWriter, r *http.Request) {
 			story = story[:20000]
 		}
 
+		time.Sleep(2 * time.Second)
+
 		if story == "" {
 			log.Println("no content")
 			w.WriteHeader(http.StatusNoContent)
