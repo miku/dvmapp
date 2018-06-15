@@ -1,10 +1,12 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"fmt"
 	"html/template"
 	"image"
+	"io"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -13,19 +15,29 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/disintegration/imaging"
 	"github.com/gorilla/mux"
 
 	"image/color"
+
 	_ "image/jpeg"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
-var puzzle *Puzzle
+var (
+	puzzle *Puzzle
+
+	mu sync.Mutex
+	db *sql.DB
+)
 
 var (
 	listen = flag.String("listen", "0.0.0.0:8080", "hostport to listen on")
+	dbpath = flag.String("db", "data.db", "path to database")
 )
 
 // Puzzle game allows to retrieve a random combination of images.
@@ -235,15 +247,62 @@ func ReadHandler(w http.ResponseWriter, r *http.Request) {
 
 // WriteHandler renders a page to write a story.
 func WriteHandler(w http.ResponseWriter, r *http.Request) {
-
-	if r.Method == "POST" {
-		r.ParseForm()       // Parse url parameters passed, then parse the response packet for the POST body (request body) attention: If you do not call ParseForm method, the following data can not be obtained form
-		fmt.Println(r.Form) // print information on server side.
-	}
-
 	vars := mux.Vars(r)
 	rid := vars["rid"]
 	log.Printf("write: %v", rid)
+
+	if r.Method == "POST" {
+		mu.Lock()
+		defer mu.Unlock()
+
+		r.ParseForm()       // Parse url parameters passed, then parse the response packet for the POST body (request body) attention: If you do not call ParseForm method, the following data can not be obtained form
+		fmt.Println(r.Form) // print information on server side.
+
+		story := strings.TrimSpace(r.Form.Get("story"))
+
+		if story == "" {
+			log.Println("no content")
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		// Cleanup.
+		// r.Form["language"]
+
+		// Store: story, date, ip, language (ger, niedersorb, obersorb,)
+
+		// `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+		// `imageid` TEXT NOT NULL,
+		// `text` TEXT NOT NULL,
+		// `language` TEXT NOT NULL,
+		// `ip` TEXT NOT NULL,
+		// `flagged` INTEGER NOT NULL,
+		// `created` DATE DEFAULT (datetime('now', 'localtime'))
+
+		stmt, err := db.Prepare(`INSERT INTO text (imageid, text, language, ip, flagged) values (?, ?, ?, ?, ?)`)
+		if err != nil {
+			log.Printf("prepared statement failed: %s", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		var lang = "ger"
+		language := r.Form.Get("language")
+		log.Println(language)
+
+		result, err := stmt.Exec(rid, story, lang, r.RemoteAddr, 0)
+		if err != nil {
+			log.Printf("sql failed: %s", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		lid, err := result.LastInsertId()
+		if err != nil {
+			log.Printf("sql last id failed: %s", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		log.Printf("inserted: %d", lid)
+	}
 
 	t, err := template.ParseFiles("templates/write.html")
 	if t == nil {
@@ -259,12 +318,14 @@ func WriteHandler(w http.ResponseWriter, r *http.Request) {
 	it, err := puzzle.ResolveImages(rid)
 	if err != nil {
 		log.Printf("cannot resolve images for identifier %s: %s", rid, err)
+		io.WriteString(w, http.StatusText(http.StatusNotFound))
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
 	if err := puzzle.CombineImages(rid); err != nil {
 		log.Printf("cannot combine images for %s: %s", rid, err)
+		io.WriteString(w, http.StatusText(http.StatusNotFound))
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
@@ -287,7 +348,16 @@ func main() {
 	flag.Parse()
 	rand.Seed(time.Now().Unix())
 
+	if _, err := os.Stat(*dbpath); os.IsNotExist(err) {
+		log.Fatal("create a database first, with: make data.db ")
+	}
 	var err error
+
+	db, err = sql.Open("sqlite3", *dbpath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	puzzle, err = NewPuzzle()
 	if err != nil {
 		log.Printf("puzzle err: %s", err)

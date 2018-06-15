@@ -16,3 +16,5 @@
 /static/videos/dvm-*
 /.vscode
 /static/cache/*jpg
+/data.db
+

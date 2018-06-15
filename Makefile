@@ -5,3 +5,6 @@ dvmapp: cmd/dvmapp/main.go
 
 clean:
 	rm -f dvmapp
+
+data.db:
+	sqlite3 $@ < db.sql
