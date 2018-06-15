@@ -15,7 +15,6 @@ import (
 	"time"
 
 	_ "github.com/miku/dvmapp/cmd/dvmapp/statik"
-	"github.com/rakyll/statik/fs"
 )
 
 // Puzzle game allows to retrieve a random combination of images.
@@ -94,11 +93,6 @@ func NewPuzzle() (*Puzzle, error) {
 func main() {
 	rand.Seed(time.Now().Unix())
 
-	statikFS, err := fs.New()
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	puzzle, err := NewPuzzle()
 	if err != nil {
 		log.Fatal(err)
@@ -107,9 +101,8 @@ func main() {
 	log.Println(puzzle.Size())
 	log.Println(puzzle.Combinations())
 
-	fs := http.FileServer(http.Dir("media"))
-	http.Handle("/media/", http.StripPrefix("/media/", fs))
-	http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(statikFS)))
+	fs := http.FileServer(http.Dir("static"))
+	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	// /w/{id}  write new story
 	// /r       read all

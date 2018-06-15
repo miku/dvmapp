@@ -12,6 +12,6 @@
 *.out
 
 /dvmapp
-/media/dvm-*
-/media/videos/dvm-*
-
+/static/dvm-*
+/static/videos/dvm-*
+/.vscode
