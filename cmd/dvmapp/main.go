@@ -99,11 +99,11 @@ func (p *Puzzle) CombineImages(identifier string) error {
 
 	// Save.
 	if err := os.MkdirAll("./static/cache", 0777); err != nil {
-		log.Fatal(err)
+		return err
 	}
 	err = imaging.Save(dst, filename)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	log.Printf("cached combined image at %s", filename)
 	return err
@@ -197,10 +197,14 @@ func NewPuzzle() (*Puzzle, error) {
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	t, err := template.ParseFiles("templates/index.html")
 	if t == nil {
-		log.Fatal("template failed")
+		log.Printf("template is nil: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("template err: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	var data = struct {
 		RandomIdentifier      string
@@ -211,10 +215,14 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// Cache an image, as poster for certain devices.
 	if err := puzzle.CombineImages(data.RandomVideoIdentifier); err != nil {
-		log.Fatal(err)
+		log.Printf("cannot combine images for %s: %s", data.RandomVideoIdentifier, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	if err := t.Execute(w, data); err != nil {
-		log.Fatal(err)
+		log.Printf("template err: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -227,32 +235,38 @@ func ReadHandler(w http.ResponseWriter, r *http.Request) {
 
 // WriteHandler renders a page to write a story.
 func WriteHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf("write: %s", r.Method)
 
 	if r.Method == "POST" {
-		r.ParseForm() //Parse url parameters passed, then parse the response packet for the POST body (request body)
-		// attention: If you do not call ParseForm method, the following data can not be obtained form
+		r.ParseForm()       // Parse url parameters passed, then parse the response packet for the POST body (request body) attention: If you do not call ParseForm method, the following data can not be obtained form
 		fmt.Println(r.Form) // print information on server side.
 	}
 
 	vars := mux.Vars(r)
 	rid := vars["rid"]
-	log.Printf("write form for: %v", rid)
+	log.Printf("write: %v", rid)
 
 	t, err := template.ParseFiles("templates/write.html")
 	if t == nil {
-		log.Fatalf("template failed: %s", err)
+		log.Printf("template failed: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("template err: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	it, err := puzzle.ResolveImages(rid)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("cannot resolve images for identifier %s: %s", rid, err)
+		w.WriteHeader(http.StatusNotFound)
+		return
 	}
 
 	if err := puzzle.CombineImages(rid); err != nil {
-		log.Fatal(err)
+		log.Printf("cannot combine images for %s: %s", rid, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	var data = struct {
@@ -263,7 +277,9 @@ func WriteHandler(w http.ResponseWriter, r *http.Request) {
 		ImageTriplet:     it,
 	}
 	if err := t.Execute(w, data); err != nil {
-		log.Fatal(err)
+		log.Printf("template err: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -274,7 +290,7 @@ func main() {
 	var err error
 	puzzle, err = NewPuzzle()
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("puzzle err: %s", err)
 	}
 	log.Printf("%d images, %d combinations, %d animations",
 		puzzle.Size(), puzzle.Combinations(), len(puzzle.Videos))
