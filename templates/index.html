@@ -45,8 +45,8 @@
 
         <video autoPlay
             poster="/static/sample.jpg">
-            <source src="/static/sample.webm" type='video/webm; codecs="vp8.0, vorbis"'>
-            <source src="/static/sample.mp4" type='video/mp4; codecs="avc1.4D401E, mp4a.40.2"'>
+            <source src="/static/videos/dvm-{{ .RandomVideoIdentifier }}.webm" type='video/webm; codecs="vp8.0, vorbis"'>
+            <source src="/static/videos/dvm-{{ .RandomVideoIdentifier }}.mp4" type='video/mp4; codecs="avc1.4D401E, mp4a.40.2"'>
             <p>This is fallback content to display for user agents that do not support the video tag.</p>
         </video>
 
@@ -55,6 +55,8 @@
     </div>
     <div class="row">
         <div class="12 columns" style="margin-top: 5%">
+        <p>Beginne eine <a href="/w/{{ .RandomVideoIdentifier }}">Geschichte mit diesen drei Bildern</a> &mdash;
+            <a href="/w/{{ .RandomIdentifier }}">oder etwas anderem</a> ...</p>
         <p>Letzte Einträge: A totam ut at aut quia voluptates provident. Porro
         ducimus et sed odio perspiciatis quas. Explicabo est commodi veniam
         veritatis nobis. Dolorem reprehenderit sed dicta quo. Quia ut

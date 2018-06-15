@@ -23,6 +23,7 @@ type Puzzle struct {
 	Artifacts  []string
 	People     []string
 	Landscapes []string
+	Videos     []string
 }
 
 // Size returns the total number of images.
@@ -53,6 +54,11 @@ func (p *Puzzle) RandomIdentifier() string {
 	return fmt.Sprintf("%s%s%s", as[rand.Intn(len(as))], ps[rand.Intn(len(ps))], ls[rand.Intn(len(ls))])
 }
 
+// RandomVideoIdentifier returns an existing video identifier.
+func (p *Puzzle) RandomVideoIdentifier() string {
+	return p.Videos[rand.Intn(len(p.Videos))]
+}
+
 // CreateRandomImage creates a random image from three elements and stores it
 // under a directory for generated files.
 func (p *Puzzle) CreateRandomImage() (string, error) {
@@ -62,8 +68,8 @@ func (p *Puzzle) CreateRandomImage() (string, error) {
 	return "", nil
 }
 
-// dirFilenames returns all filenames in a given directory.
-func dirFilenames(dir string) (result []string, err error) {
+// readDir returns all filenames in a given directory.
+func readDir(dir string) (result []string, err error) {
 	var files []os.FileInfo
 	files, err = ioutil.ReadDir(dir)
 	if err != nil {
@@ -79,20 +85,33 @@ func dirFilenames(dir string) (result []string, err error) {
 func NewPuzzle() (*Puzzle, error) {
 	var puzzle = &Puzzle{}
 	var err error
-	if puzzle.Artifacts, err = dirFilenames("static/images/a"); err != nil {
+	if puzzle.Artifacts, err = readDir("static/images/a"); err != nil {
 		return nil, err
 	}
-	if puzzle.People, err = dirFilenames("static/images/p"); err != nil {
+	if puzzle.People, err = readDir("static/images/p"); err != nil {
 		return nil, err
 	}
-	if puzzle.Landscapes, err = dirFilenames("static/images/l"); err != nil {
+	if puzzle.Landscapes, err = readDir("static/images/l"); err != nil {
 		return nil, err
 	}
+	files, err := readDir("static/videos")
+	if err != nil {
+		return nil, err
+	}
+	// Store only the ids, like 051314 and so on for a single file type.
+	var vids []string
+	for _, v := range files {
+		if strings.HasSuffix(v, ".webm") {
+			base := strings.Replace(path.Base(v), ".webm", "", -1)
+			vids = append(vids, strings.Replace(base, "dvm-", "", -1))
+		}
+	}
+	puzzle.Videos = vids
 	return puzzle, nil
 }
 
+// HomeHandler render homepage.
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println(puzzle.RandomIdentifier())
 	t, err := template.ParseFiles("templates/index.html")
 	if t == nil {
 		log.Fatal("template failed")
@@ -100,7 +119,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := t.Execute(w, nil); err != nil {
+	if err := t.Execute(w, puzzle); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -127,7 +146,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("%d images, %d combinations", puzzle.Size(), puzzle.Combinations())
+	log.Printf("%d images, %d combinations, %d animations",
+		puzzle.Size(), puzzle.Combinations(), len(puzzle.Videos))
 
 	r := mux.NewRouter()
 
