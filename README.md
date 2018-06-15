@@ -51,3 +51,6 @@ Each store can gather a bit of feedback, like stars.
 
 A special presentation mode where images and text are displayed.
 
+----
+
+* Edith: p/02, a/02, a/25.

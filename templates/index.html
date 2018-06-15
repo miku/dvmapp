@@ -61,7 +61,7 @@
         <p><a href="/r/{{ .RandomIdentifier }}">Lies eine zufällige Geschichte</a> oder <a href="/translate">versuche dich an einer Übersetzung</a>.</p>
         <hr>
         {{range .Stories}}
-          <a href="/r/{{ .ImageIdentifier }}">{{ .ImageIdentifier }}</a> {{ .Text | clip }} &mdash; {{ .Created | ago }}<br>
+          <a href="/r/{{ .ImageIdentifier }}">{{ .ImageIdentifier }}</a> {{ .Text | clip }} &mdash; <a href="/s/{{ .Identifier }}">{{ .Created | ago }}</a><br>
         {{end}}
         </div>
     </div>

@@ -52,7 +52,7 @@
 
             <hr>
             {{range .Stories}}
-                 <p>{{ .Text }} {{ .Created | ago }}</p>
+                 <p>{{ .Text }} &mdash; <a href="/s/{{ .Identifier }}">{{ .Created | ago }}</a></p>
                  <hr>
             {{end}}
 

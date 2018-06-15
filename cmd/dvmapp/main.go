@@ -60,6 +60,7 @@ type ImageTriplet struct {
 
 // Story is a minimal text.
 type Story struct {
+	Identifier      int
 	ImageIdentifier string
 	Text            string
 	Created         time.Time
@@ -69,6 +70,14 @@ type Story struct {
 func (p *Puzzle) ResolveImages(identifier string) (*ImageTriplet, error) {
 	if len(identifier) != 6 {
 		return nil, fmt.Errorf("six digit identifier expected")
+	}
+	// Add exception for a/02, p/02, a/25 - first story.
+	if identifier == "020225" {
+		return &ImageTriplet{
+			Artifact:  fmt.Sprintf("/static/images/a/%s.jpg", identifier[:2]),
+			People:    fmt.Sprintf("/static/images/p/%s.jpg", identifier[2:4]),
+			Landscape: fmt.Sprintf("/static/images/a/%s.jpg", identifier[4:6]),
+		}, nil
 	}
 	// TODO: Test if identifier is valid.
 	return &ImageTriplet{
@@ -287,7 +296,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := db.Query("SELECT imageid, text, created FROM text ORDER BY created DESC LIMIT 3")
+	rows, err := db.Query("SELECT id, imageid, text, created FROM text ORDER BY created DESC LIMIT 7")
 	if err != nil {
 		log.Printf("sql failed: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -296,18 +305,20 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 
 	var stories []Story
 
+	var id int
 	var imageIdentifier string
 	var text string
 	var created time.Time
 
 	for rows.Next() {
-		err = rows.Scan(&imageIdentifier, &text, &created)
+		err = rows.Scan(&id, &imageIdentifier, &text, &created)
 		if err != nil {
 			log.Printf("sql failed: %s", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		stories = append(stories, Story{
+			Identifier:      id,
 			ImageIdentifier: imageIdentifier,
 			Text:            text,
 			Created:         created,

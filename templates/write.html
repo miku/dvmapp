@@ -41,7 +41,7 @@
   <div class="container">
     <div class="row">
       <div class="12 columns" style="margin-top: 2%">
-        <h3><a href="/">Flachsmaschine</a> {{ .RandomIdentifier }}</h3>
+        <h3><a href="/">Flachsmaschine</a> <a href="/r/{{ .RandomIdentifier }}">{{ .RandomIdentifier }}</a></h3>
 
             <img src="/static/cache/{{ .RandomIdentifier }}.jpg" alt="">
 
@@ -51,12 +51,12 @@
         <div class="12 columns" style="margin-top: 0%">
             <form method="POST" action="/w/{{ .RandomIdentifier }}" id="story">
                 <textarea autofocus name="story" form="story" style="width: 100%; height: 15em;" placeholder="Es spinnt der Flachs ..."></textarea> 
-                <select name="language">
-                        <option value="ger">Deutsch</option> <!-- 90 million speakers -->
-                        <option value="dsb">Niedersorbisch</option> <!-- 7000 speakers -->
-                        <option value="hsb">Obersorbisch</option> <!-- 30000 speakers -->
-                </select> 
-                <input type="submit" value="Speichern">
+                Text in <select name="language">
+                        <option value="ger">Deutscher</option> <!-- 90 million speakers -->
+                        <option value="dsb">Niedersorbischer</option> <!-- 7000 speakers -->
+                        <option value="hsb">Obersorbischer</option> <!-- 30000 speakers -->
+                </select> Sprache
+                <input type="submit" value="Speichern"> oder <a href="/r/{{ .RandomIdentifier }}">abbrechen</a>.
             </form>
         </div>
     </div>
