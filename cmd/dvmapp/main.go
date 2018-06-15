@@ -15,6 +15,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	fs := http.FileServer(http.Dir("media"))
+	http.Handle("/media/", http.StripPrefix("/media/", fs))
+
 	http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(statikFS)))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		t, err := template.ParseFiles("templates/index.html")
