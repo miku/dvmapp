@@ -265,7 +265,7 @@ func WriteHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := puzzle.CombineImages(rid); err != nil {
 		log.Printf("cannot combine images for %s: %s", rid, err)
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
