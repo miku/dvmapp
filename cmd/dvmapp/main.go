@@ -1,4 +1,3 @@
-//go:generate statik -src=../../public
 package main
 
 import (
@@ -13,8 +12,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
-	_ "github.com/miku/dvmapp/cmd/dvmapp/statik"
 )
 
 // Puzzle game allows to retrieve a random combination of images.
