@@ -12,7 +12,11 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/gorilla/mux"
 )
+
+var puzzle *Puzzle
 
 // Puzzle game allows to retrieve a random combination of images.
 type Puzzle struct {
@@ -87,36 +91,50 @@ func NewPuzzle() (*Puzzle, error) {
 	return puzzle, nil
 }
 
-func main() {
-	rand.Seed(time.Now().Unix())
-
-	puzzle, err := NewPuzzle()
+func HomeHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println(puzzle.RandomIdentifier())
+	t, err := template.ParseFiles("templates/index.html")
+	if t == nil {
+		log.Fatal("template failed")
+	}
 	if err != nil {
 		log.Fatal(err)
 	}
-	// log.Println(puzzle)
-	log.Println(puzzle.Size())
-	log.Println(puzzle.Combinations())
+	if err := t.Execute(w, nil); err != nil {
+		log.Fatal(err)
+	}
+}
 
-	fs := http.FileServer(http.Dir("static"))
-	http.Handle("/static/", http.StripPrefix("/static/", fs))
+// ReadHandler renders a page with stories to read.
+func ReadHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "%v\n", vars["rid"])
+}
 
-	// /w/{id}  write new story
-	// /r       read all
-	// /r/{id}  read a specific image story
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		log.Println(puzzle.RandomIdentifier())
-		t, err := template.ParseFiles("templates/index.html")
-		if t == nil {
-			log.Fatal("template failed")
-		}
-		if err != nil {
-			log.Fatal(err)
-		}
-		if err := t.Execute(w, nil); err != nil {
-			log.Fatal(err)
-		}
-	})
+// WriteHandler renders a page to write a story.
+func WriteHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "%v\n", vars["rid"])
+}
 
-	http.ListenAndServe("0.0.0.0:8080", nil)
+func main() {
+	rand.Seed(time.Now().Unix())
+
+	var err error
+	puzzle, err = NewPuzzle()
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("%d images, %d combinations", puzzle.Size(), puzzle.Combinations())
+
+	r := mux.NewRouter()
+
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static/"))))
+	r.HandleFunc("/r/{rid}", ReadHandler)
+	r.HandleFunc("/w/{rid}", WriteHandler)
+	r.HandleFunc("/", HomeHandler)
+	http.Handle("/", r)
+	log.Fatal(http.ListenAndServe("0.0.0.0:8080", nil))
 }
