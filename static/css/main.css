@@ -9,3 +9,7 @@ img {
 video[poster] {
     width:100%;
 }
+
+select {
+    font-size: 0.8em;
+}

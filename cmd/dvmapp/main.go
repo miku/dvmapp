@@ -55,6 +55,12 @@ type ImageTriplet struct {
 	Landscape string
 }
 
+// Story is a minimal text.
+type Story struct {
+	Text    string
+	Created time.Time
+}
+
 // ResolveImages returns a list of image paths given an identifier.
 func (p *Puzzle) ResolveImages(identifier string) (*ImageTriplet, error) {
 	if len(identifier) != 6 {
@@ -241,8 +247,74 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 // ReadHandler renders a page with stories to read.
 func ReadHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "%v\n", vars["rid"])
+
+	rid := vars["rid"]
+
+	t, err := template.ParseFiles("templates/read.html")
+	if t == nil {
+		log.Printf("template failed: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if err != nil {
+		log.Printf("template err: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	it, err := puzzle.ResolveImages(rid)
+	if err != nil {
+		log.Printf("cannot resolve images for identifier %s: %s", rid, err)
+		io.WriteString(w, http.StatusText(http.StatusNotFound))
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	if err := puzzle.CombineImages(rid); err != nil {
+		log.Printf("cannot combine images for %s: %s", rid, err)
+		io.WriteString(w, http.StatusText(http.StatusNotFound))
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	rows, err := db.Query("SELECT text, created FROM text where imageid = ?", rid)
+	if err != nil {
+		log.Printf("sql failed: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	var stories []Story
+
+	var text string
+	var created time.Time
+
+	for rows.Next() {
+		err = rows.Scan(&text, &created)
+		if err != nil {
+			log.Printf("sql failed: %s", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		stories = append(stories, Story{
+			Text:    text,
+			Created: created,
+		})
+	}
+
+	var data = struct {
+		RandomIdentifier string
+		ImageTriplet     *ImageTriplet
+		Stories          []Story
+	}{
+		RandomIdentifier: rid,
+		ImageTriplet:     it,
+		Stories:          stories,
+	}
+	if err := t.Execute(w, data); err != nil {
+		log.Printf("template err: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
 
 // WriteHandler renders a page to write a story.
@@ -302,6 +374,8 @@ func WriteHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		log.Printf("inserted: %d", lid)
+		http.Redirect(w, r, fmt.Sprintf("/r/%s", rid), http.StatusSeeOther)
+		return
 	}
 
 	t, err := template.ParseFiles("templates/write.html")
