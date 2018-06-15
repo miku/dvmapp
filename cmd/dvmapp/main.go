@@ -30,6 +30,15 @@ func (p *Puzzle) Combinations() int {
 	return len(p.Artifacts) * len(p.People) * len(p.Landscapes)
 }
 
+// CreateRandomImage creates a random image from three elements and stores it
+// under a directory for generated files.
+func (p *Puzzle) CreateRandomImage() (string, error) {
+	// If exists, just return the file.
+	// Combine, resize and stack horizontally.
+	// Save.
+	return "", nil
+}
+
 // dirFilenames returns all filenames in a given directory.
 func dirFilenames(dir string) (result []string, err error) {
 	var files []os.FileInfo
@@ -75,8 +84,11 @@ func main() {
 
 	fs := http.FileServer(http.Dir("media"))
 	http.Handle("/media/", http.StripPrefix("/media/", fs))
-
 	http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(statikFS)))
+
+	// /w/{id}  write new story
+	// /r       read all
+	// /r/{id}  read a specific image story
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		t, err := template.ParseFiles("templates/index.html")
 		if t == nil {
@@ -89,5 +101,6 @@ func main() {
 			log.Fatal(err)
 		}
 	})
+
 	http.ListenAndServe("0.0.0.0:8080", nil)
 }
