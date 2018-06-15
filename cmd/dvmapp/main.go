@@ -25,7 +25,7 @@ import (
 var puzzle *Puzzle
 
 var (
-	listen = flag.String("-listen", "0.0.0.0:8080", "hostport to listen on")
+	listen = flag.String("listen", "0.0.0.0:8080", "hostport to listen on")
 )
 
 // Puzzle game allows to retrieve a random combination of images.
