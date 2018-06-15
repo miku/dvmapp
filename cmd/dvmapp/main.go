@@ -231,8 +231,8 @@ func AboutHandler(w http.ResponseWriter, r *http.Request) {
 		"upper": strings.ToUpper,
 		"ago":   humanize.Time,
 		"clip": func(s string) string {
-			if len(s) > 30 {
-				return fmt.Sprintf("%s ...", s[:30])
+			if len(s) > 50 {
+				return fmt.Sprintf("%s ...", s[:50])
 			}
 			return s
 		},
@@ -277,8 +277,8 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		"upper": strings.ToUpper,
 		"ago":   humanize.Time,
 		"clip": func(s string) string {
-			if len(s) > 30 {
-				return fmt.Sprintf("%s ...", s[:30])
+			if len(s) > 50 {
+				return fmt.Sprintf("%s ...", s[:50])
 			}
 			return s
 		},
@@ -357,8 +357,8 @@ func ReadHandler(w http.ResponseWriter, r *http.Request) {
 		"upper": strings.ToUpper,
 		"ago":   humanize.Time,
 		"clip": func(s string) string {
-			if len(s) > 30 {
-				return fmt.Sprintf("%s ...", s[:30])
+			if len(s) > 50 {
+				return fmt.Sprintf("%s ...", s[:50])
 			}
 			return s
 		},
@@ -391,7 +391,7 @@ func ReadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := db.Query("SELECT text, created FROM text where imageid = ? ORDER BY created DESC", rid)
+	rows, err := db.Query("SELECT id, text, created FROM text where imageid = ? ORDER BY created DESC", rid)
 	if err != nil {
 		log.Printf("sql failed: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -400,19 +400,21 @@ func ReadHandler(w http.ResponseWriter, r *http.Request) {
 
 	var stories []Story
 
+	var identifier int
 	var text string
 	var created time.Time
 
 	for rows.Next() {
-		err = rows.Scan(&text, &created)
+		err = rows.Scan(&identifier, &text, &created)
 		if err != nil {
 			log.Printf("sql failed: %s", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		stories = append(stories, Story{
-			Text:    text,
-			Created: created,
+			Identifier: identifier,
+			Text:       text,
+			Created:    created,
 		})
 	}
 
