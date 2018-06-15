@@ -75,13 +75,13 @@ func dirFilenames(dir string) (result []string, err error) {
 func NewPuzzle() (*Puzzle, error) {
 	var puzzle = &Puzzle{}
 	var err error
-	if puzzle.Artifacts, err = dirFilenames("media/images/a"); err != nil {
+	if puzzle.Artifacts, err = dirFilenames("static/images/a"); err != nil {
 		return nil, err
 	}
-	if puzzle.People, err = dirFilenames("media/images/p"); err != nil {
+	if puzzle.People, err = dirFilenames("static/images/p"); err != nil {
 		return nil, err
 	}
-	if puzzle.Landscapes, err = dirFilenames("media/images/l"); err != nil {
+	if puzzle.Landscapes, err = dirFilenames("static/images/l"); err != nil {
 		return nil, err
 	}
 	return puzzle, nil
