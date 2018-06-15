@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"html/template"
 	"image"
@@ -22,6 +23,10 @@ import (
 )
 
 var puzzle *Puzzle
+
+var (
+	listen = flag.String("-listen", "0.0.0.0:8080", "hostport to listen on")
+)
 
 // Puzzle game allows to retrieve a random combination of images.
 type Puzzle struct {
@@ -263,6 +268,7 @@ func WriteHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	flag.Parse()
 	rand.Seed(time.Now().Unix())
 
 	var err error
@@ -280,5 +286,5 @@ func main() {
 	r.HandleFunc("/w/{rid}", WriteHandler)
 	r.HandleFunc("/", HomeHandler)
 	http.Handle("/", r)
-	log.Fatal(http.ListenAndServe("0.0.0.0:8080", nil))
+	log.Fatal(http.ListenAndServe(*listen, nil))
 }
