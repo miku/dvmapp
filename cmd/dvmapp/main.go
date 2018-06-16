@@ -322,7 +322,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := db.Query("SELECT id, imageid, text, created FROM text ORDER BY created DESC LIMIT 7")
+	rows, err := db.Query("SELECT id, imageid, text, created FROM text ORDER BY created ASC LIMIT 20")
 	if err != nil {
 		log.Printf("sql failed: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)

@@ -41,7 +41,13 @@
   <div class="container">
     <div class="row">
       <div class="12 columns" style="margin-top: 2%">
-        <h3><a href="/">Die virtuelle Mittagsfrau</a> &mdash; <a href="/">Flachsmaschine</a></h3>
+        <p style="line-height: 1.4em">
+
+            Willkommen im Reich der "Mittagsfrau"! Die Sorben in der Ober- und Niederlausitz glauben an die Mittagsfrau, die um Punkt 12 Uhr zu den Bauern auf die Flachsfelder kommt und nur von ihnen ablässt, wenn sie ihr Geschichten erzählen. Schaffen sie das nicht bis eins, ist der Kopf ab.
+            Diese Kombination von Flachs und "Flachsen" haben wir zum Anlass genommen, ein Geschichtenportal zu kreieren. Inspiration für die eigenen Texte sind dabei jeweils drei Fotos aus dem reichen Fundus des Sorbischen Instituts Bautzen zur Flachsherstellung, die willkürlich angezeigt werden. Daraus sollt Ihr eigene Ideen entwickeln, kleine Anekdoten, Märchen, was Ihr wollt. Du hast keine Idee, findest das Projekt aber gut und kannst ober-oder niedersorbisch? Dann hilf uns beim Übersetzen der Texte in andere Sprachen! Und jetzt ran an die "Flachsmaschine"...
+
+        </p>
+        <h3><a href="/">Die virtuelle Mittagsfrau</a></h3>
 
         <video autoPlay
             poster="/static/cache/{{ .RandomVideoIdentifier }}.jpg">
@@ -55,13 +61,14 @@
     </div>
     <div class="row">
         <div class="12 columns" style="margin-top: 3%">
-        <p>Beginne eine <a href="/w/{{ .RandomVideoIdentifier }}">Geschichte mit diesen drei Bildern</a> 
-          | <a href="/">NEU!</a> &mdash;
-            <a href="/w/{{ .RandomIdentifier }}">oder etwas anderem</a> ...</p>
-        <p><a href="/r/{{ .RandomImageWithStory }}">Lies eine zufällige Geschichte</a>.
+        <p><a href="/w/{{ .RandomVideoIdentifier }}">Start</a> 
+          | <a href="/">Andere Fotos</a> |
+            <a href="/w/{{ .RandomIdentifier }}">Sofort schreiben</a></p>
+            <hr>
+        <p><a href="/r/{{ .RandomImageWithStory }}">Geschichten aus der Flachsmaschine</a>
             <!-- oder <a href="/translate">versuche dich an einer Übersetzung</a>.--> 
           </p> 
-        <hr>
+
         {{range .Stories}}
           <a href="/r/{{ .ImageIdentifier }}">{{ .ImageIdentifier }}</a> {{ .Text | clip }} &mdash; <a href="/s/{{ .Identifier }}">{{ .Created | ago }}</a><br>
         {{end}}

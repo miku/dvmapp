@@ -27,7 +27,8 @@ a {
     text-decoration: none;
     }
     a:link {
-    color:rgb(103, 96, 83);
+    /* color:rgb(103, 96, 83); */
+    color: #0000ff;
     border-bottom: 1px solid #c0c0c0;
     }
     a:visited {
