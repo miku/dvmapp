@@ -14,6 +14,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -468,6 +469,108 @@ func ReadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// StoryHandler renders a single stories to read.
+func StoryHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	identifierString := vars["id"]
+	identifier, err := strconv.Atoi(identifierString)
+	if err != nil {
+		log.Printf("cannot resolve story for identifier %s", identifierString)
+		io.WriteString(w, http.StatusText(http.StatusNotFound))
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	funcMap := template.FuncMap{
+		"upper": strings.ToUpper,
+		"ago":   humanize.Time,
+		"clip": func(s string) string {
+			if len(s) > 50 {
+				return fmt.Sprintf("%s ...", s[:50])
+			}
+			return s
+		},
+	}
+
+	t, err := template.New("story.html").Funcs(funcMap).ParseFiles("templates/story.html")
+	if t == nil {
+		log.Printf("template failed: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if err != nil {
+		log.Printf("template err: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	rows, err := db.Query("SELECT imageid, text, created FROM text where id = ? LIMIT 1", identifier)
+	if err != nil {
+		log.Printf("sql failed: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	var stories []Story
+
+	var imageIdentifier string
+	var text string
+	var created time.Time
+
+	for rows.Next() {
+		err = rows.Scan(&imageIdentifier, &text, &created)
+		if err != nil {
+			log.Printf("sql failed: %s", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		stories = append(stories, Story{
+			Identifier:      identifier,
+			ImageIdentifier: imageIdentifier,
+			Text:            text,
+			Created:         created,
+		})
+	}
+
+	if len(stories) == 0 {
+		log.Printf("cannot resolve story for identifier %s", identifierString)
+		io.WriteString(w, http.StatusText(http.StatusNotFound))
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	it, err := puzzle.ResolveImages(imageIdentifier)
+	if err != nil {
+		log.Printf("cannot resolve images for identifier %s: %s", imageIdentifier, err)
+		io.WriteString(w, http.StatusText(http.StatusNotFound))
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	if err := puzzle.CombineImages(imageIdentifier); err != nil {
+		log.Printf("cannot combine images for %s: %s", imageIdentifier, err)
+		io.WriteString(w, http.StatusText(http.StatusNotFound))
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	var data = struct {
+		RandomIdentifier string
+		ImageTriplet     *ImageTriplet
+		Story            Story
+	}{
+		RandomIdentifier: imageIdentifier,
+		ImageTriplet:     it,
+		Story:            stories[0],
+	}
+	if err := t.Execute(w, data); err != nil {
+		log.Printf("template err: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+}
+
 // WriteHandler renders a page to write a story.
 func WriteHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -612,6 +715,7 @@ func main() {
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static/"))))
 	r.HandleFunc("/r/{rid}", ReadHandler)
 	r.HandleFunc("/w/{rid}", WriteHandler)
+	r.HandleFunc("/s/{id}", StoryHandler)
 	r.HandleFunc("/about", AboutHandler)
 	r.HandleFunc("/", HomeHandler)
 	http.Handle("/", r)
