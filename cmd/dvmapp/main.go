@@ -191,7 +191,7 @@ func (p *Puzzle) RandomIdentifier() string {
 		base := path.Base(fn)
 		ls = append(ls, strings.Replace(base, ".jpg", "", -1))
 	}
-	return fmt.Sprintf("%s%s%s", as[rand.Intn(len(as))], ps[rand.Intn(len(ps))], ls[rand.Intn(len(ls))])
+	return fmt.Sprintf("%s%s%s", as[rand.Intn(len(as)-1)], ps[rand.Intn(len(ps)-1)], ls[rand.Intn(len(ls)-1)])
 }
 
 // RandomVideoIdentifier returns an existing video identifier.
