@@ -17,4 +17,4 @@
 /.vscode
 /static/cache/*jpg
 /data.db
-
+/logs
