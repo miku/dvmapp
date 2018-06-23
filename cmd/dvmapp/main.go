@@ -713,6 +713,9 @@ func main() {
 	r := mux.NewRouter()
 
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static/"))))
+	r.HandleFunc("/robots.txt", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/static/robots.txt", 302)
+	})
 	r.HandleFunc("/r/{rid}", ReadHandler)
 	r.HandleFunc("/w/{rid}", WriteHandler)
 	r.HandleFunc("/s/{id}", StoryHandler)

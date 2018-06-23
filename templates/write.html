@@ -5,7 +5,7 @@
   <!-- Basic Page Needs
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
   <meta charset="utf-8">
-  <title>DVM CDV 2018</title>
+  <title>DVM {{ .RandomIdentifier }}</title>
   <meta name="description" content="Die virtuelle Mittagsfrau">
 
   <!-- Mobile Specific Metas
@@ -50,7 +50,7 @@
     <div class="row">
         <div class="12 columns" style="margin-top: 0%">
             <form method="POST" action="/w/{{ .RandomIdentifier }}" id="story">
-                <textarea autofocus name="story" form="story" style="width: 100%; height: 15em;" placeholder="Es spinnt der Flachs ..."></textarea> 
+                <textarea autofocus name="story" form="story" style="width: 100%; height: 15em;" placeholder="Es spinnt der Flachs ..."></textarea>
                 Text in <select name="language">
                         <option value="ger">Deutscher</option> <!-- 90 million speakers -->
                         <option value="dsb">Niedersorbischer</option> <!-- 7000 speakers -->

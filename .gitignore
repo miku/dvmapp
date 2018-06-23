@@ -18,3 +18,5 @@
 /static/cache/*jpg
 /data.db
 /logs
+/static/*mp3
+/static/webalizer
