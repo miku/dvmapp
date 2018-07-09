@@ -25,7 +25,6 @@ import (
 	"github.com/gorilla/mux"
 
 	"image/color"
-
 	_ "image/jpeg"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -678,6 +677,10 @@ func WriteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func redirectHandler(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "https://mittagsfrau.de"+r.RequestURI, http.StatusMovedPermanently)
+}
+
 func main() {
 	flag.Parse()
 	rand.Seed(time.Now().Unix())
@@ -725,5 +728,9 @@ func main() {
 
 	loggedRouter := handlers.LoggingHandler(loggingWriter, r)
 
-	log.Fatal(http.ListenAndServe(*listen, loggedRouter))
+	go func() {
+		// log.Fatal(http.ListenAndServe(*listen, loggedRouter))
+		log.Fatal(http.ListenAndServe(*listen, http.HandlerFunc(redirectHandler)))
+	}()
+	log.Fatal(http.ListenAndServeTLS(":443", "/etc/letsencrypt/live/mittagsfrau.de/fullchain.pem", "/etc/letsencrypt/live/mittagsfrau.de/privkey.pem", loggedRouter))
 }
