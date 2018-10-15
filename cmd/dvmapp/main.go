@@ -38,9 +38,11 @@ var (
 )
 
 var (
-	listen  = flag.String("listen", "0.0.0.0:8080", "hostport to listen on")
-	dbpath  = flag.String("db", "data.db", "path to database")
-	logfile = flag.String("log", "", "path to logfile")
+	listen    = flag.String("listen", "0.0.0.0:8080", "hostport to listen on")
+	dbpath    = flag.String("db", "data.db", "path to database")
+	logfile   = flag.String("log", "", "path to logfile")
+	fullchain = flag.String("fullchain", "", "path to fullchain")
+	privkey   = flag.String("privkey", "", "path to privkey")
 )
 
 // Puzzle game allows to retrieve a random combination of images.
@@ -729,8 +731,7 @@ func main() {
 	loggedRouter := handlers.LoggingHandler(loggingWriter, r)
 
 	go func() {
-		// log.Fatal(http.ListenAndServe(*listen, loggedRouter))
 		log.Fatal(http.ListenAndServe(*listen, http.HandlerFunc(redirectHandler)))
 	}()
-	log.Fatal(http.ListenAndServeTLS(":443", "/etc/letsencrypt/live/mittagsfrau.de/fullchain.pem", "/etc/letsencrypt/live/mittagsfrau.de/privkey.pem", loggedRouter))
+	log.Fatal(http.ListenAndServeTLS(":443", *fullchain, *privkey, loggedRouter))
 }
