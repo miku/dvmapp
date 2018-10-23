@@ -2,7 +2,7 @@
 
 Server for Project Die Virtuelle Mittagsfrau for Coding da Vinci Ost 2018.
 
-![](dvm-040223.gif)
+![](anim-opt.gif)
 
 ## Contents
 
